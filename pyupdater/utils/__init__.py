@@ -62,9 +62,7 @@ class PluginManager(object):
                 except Exception as err:
                     log.debug(err, exc_info=True)
                 else:
-                    for p in namespace.extensions:
-                        _all_plugins.append(p.obj)
-
+                    _all_plugins.extend(p.obj for p in namespace.extensions)
         # Sorting by name then author
         plugins = sorted(_all_plugins, key=lambda x: (x.name, x.author))
 
@@ -94,7 +92,7 @@ class PluginManager(object):
             self.unique_names[name] = ""
 
         # Create the output before we update the name count
-        out = "{}{}".format(name, str(self.unique_names[name]))
+        out = f"{name}{str(self.unique_names[name])}"
 
         # Setup the counter for the next exact name match
         # Since we already created the output up above
@@ -139,7 +137,7 @@ class PluginManager(object):
         plugin = self.get_plugin(name)
 
         # Create the key to retrieve this plugins config
-        config_key = "{}-{}".format(plugin.name.lower(), plugin.author)
+        config_key = f"{plugin.name.lower()}-{plugin.author}"
 
         # Get the config for this plugin
         plugin_config = configs.get(config_key)
@@ -162,10 +160,7 @@ class PluginManager(object):
         """Returns the name & author of all installed
         plugins
         """
-        plugin_info = []
-        for p in self.plugins:
-            plugin_info.append({"name": p["name"], "author": p["author"]})
-        return plugin_info
+        return [{"name": p["name"], "author": p["author"]} for p in self.plugins]
 
     # Init is false by default. Used when you want
     # to get a plugin without initialization
@@ -180,23 +175,17 @@ class PluginManager(object):
 
     def get_plugin_settings(self, name):
         plugin = self._get_plugin(name)
-        config = self._get_plugin_config(plugin)
-        return config
+        return self._get_plugin_config(plugin)
 
     def _get_plugin_config(self, plugin):
-        config_key = "{}-{}".format(plugin.name.lower(), plugin.author)
+        config_key = f"{plugin.name.lower()}-{plugin.author}"
         return self.configs.get(config_key, {})
 
     def _get_plugin(self, name):
-        plugin = None
         name = name.lower()
-        for p in self.plugins:
-            # We match the given name to the names
-            # we generate for uniqueness
-            if name == p["name"].lower():
-                plugin = p["plugin"]
-                break
-        return plugin
+        return next(
+            (p["plugin"] for p in self.plugins if name == p["name"].lower()), None
+        )
 
 
 def check_repo():
@@ -209,7 +198,7 @@ def check_repo():
 
 
 def get_http_pool():
-    return urllib3.PoolManager(cert_reqs=str("CERT_REQUIRED"), ca_certs=certifi.where())
+    return urllib3.PoolManager(cert_reqs="CERT_REQUIRED", ca_certs=certifi.where())
 
 
 def get_size_in_bytes(filename):
@@ -231,9 +220,7 @@ def create_asset_archive(name, version):
          (str) - name of archive
     """
     file_dir = os.path.dirname(os.path.abspath(name))
-    filename = "{}-{}-{}".format(
-        os.path.splitext(name)[0], system.get_system(), version
-    )
+    filename = f"{os.path.splitext(name)[0]}-{system.get_system()}-{version}"
 
     # Only use zip on windows.
     # Zip does not preserve file permissions on nix & mac
@@ -289,14 +276,12 @@ def make_archive(name, target, version, archive_format):
 
         # is a win folder so the manifest need to be renamed too
         if system.get_system() == "win":
-            src_manifest = src_executable + ".manifest"
-            dst_manifest = dst_executable + ".manifest"
+            src_manifest = f"{src_executable}.manifest"
+            dst_manifest = f"{dst_executable}.manifest"
             shutil.move(src_manifest, dst_manifest)
 
     file_dir = os.path.dirname(os.path.abspath(target))
-    filename = "{}-{}-{}".format(
-        os.path.splitext(name)[0], system.get_system(), version
-    )
+    filename = f"{os.path.splitext(name)[0]}-{system.get_system()}-{version}"
     # Only use zip on windows.
     # Zip does not preserve file permissions on nix & mac
     # tar.gz creates full file path
@@ -348,8 +333,7 @@ def run(cmd):
         (int): Exit code
     """
     log.debug("Command: %s", cmd)
-    exit_code = subprocess.call(cmd, shell=True)
-    return exit_code
+    return subprocess.call(cmd, shell=True)
 
 
 class JSONStore(DictMixin):
@@ -395,9 +379,7 @@ class JSONStore(DictMixin):
         return len(self._data)
 
     def __iter__(self):
-        i = []
-        for k, v in self._data.items():
-            i.append((k, v))
+        i = list(self._data.items())
         return iter(i)
 
     @staticmethod
@@ -406,7 +388,7 @@ class JSONStore(DictMixin):
         for k, v in data.items():
             if hasattr(v, "__call__") is True:
                 continue
-            if isinstance(v, JSONStore) is True:
+            if isinstance(v, JSONStore):
                 continue
             if k in ["__weakref__", "__module__", "__dict__", "__doc__"]:
                 continue

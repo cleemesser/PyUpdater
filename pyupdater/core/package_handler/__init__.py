@@ -223,18 +223,17 @@ class PackageHandler(object):
         if p.name not in data["package"].keys():
             data["package"][p.name] = {p.platform: p.version}
             log.debug("Adding new package to config")
-        else:
-            # Adding platform and version
-            if p.platform not in data["package"][p.name].keys():
+        elif p.platform in data["package"][p.name].keys():
+            # Getting current version for platform
+            value = data["package"][p.name][p.platform]
+            # Updating version if applicable
+            if p.version > value:
+                log.debug("Adding new version to package-config")
                 data["package"][p.name][p.platform] = p.version
-                log.debug("Adding new arch to package-config: %s", p.platform)
-            else:
-                # Getting current version for platform
-                value = data["package"][p.name][p.platform]
-                # Updating version if applicable
-                if p.version > value:
-                    log.debug("Adding new version to package-config")
-                    data["package"][p.name][p.platform] = p.version
+
+        else:
+            data["package"][p.name][p.platform] = p.version
+            log.debug("Adding new arch to package-config: %s", p.platform)
 
     @staticmethod
     def _cleanup(patch_manifest):
@@ -247,25 +246,20 @@ class PackageHandler(object):
 
     @staticmethod
     def _make_patches(patch_manifest):
-        pool_output = []
         if len(patch_manifest) < 1:
-            return pool_output
+            return []
         log.info("Starting patch creation")
-        if sys.platform != "win32":
-            try:
-                cpu_count = multiprocessing.cpu_count() * 2
-            except Exception as err:
-                log.debug(err, exc_info=True)
-                log.warning("Cannot get cpu count from os. Using default 2")
-                cpu_count = 2
+        if sys.platform == "win32":
+            return [make_patch(p) for p in patch_manifest]
+        try:
+            cpu_count = multiprocessing.cpu_count() * 2
+        except Exception as err:
+            log.debug(err, exc_info=True)
+            log.warning("Cannot get cpu count from os. Using default 2")
+            cpu_count = 2
 
-            pool = multiprocessing.Pool(processes=cpu_count)
-            pool_output = pool.map(make_patch, patch_manifest)
-        else:
-            pool_output = []
-            for p in patch_manifest:
-                pool_output.append(make_patch(p))
-        return pool_output
+        pool = multiprocessing.Pool(processes=cpu_count)
+        return pool.map(make_patch, patch_manifest)
 
     @staticmethod
     def _add_patches_to_packages(package_manifest, patches, patch_support):
@@ -284,9 +278,8 @@ class PackageHandler(object):
                         break
                     else:
                         log.debug("No patch match found")
-        else:
-            if patch_support is True:
-                log.debug("No patches found: %s", patches)
+        elif patch_support is True:
+            log.debug("No patches found: %s", patches)
 
     @staticmethod
     def _update_file_list(json_data, package_info):
@@ -335,7 +328,7 @@ class PackageHandler(object):
         for p in package_manifest:
             info = PackageHandler._manifest_to_version_file_compat(p)
 
-            version_key = "{}*{}*{}".format(settings.UPDATES_KEY, p.name, p.version)
+            version_key = f"{settings.UPDATES_KEY}*{p.name}*{p.version}"
             version = easy_dict.get(version_key)
             log.debug("Package Info: %s", version)
 
@@ -346,9 +339,7 @@ class PackageHandler(object):
 
                 # First version with this package name
                 json_data[settings.UPDATES_KEY][p.name][p.version] = {}
-                platform_key = "{}*{}*{}*{}".format(
-                    settings.UPDATES_KEY, p.name, p.version, "platform"
-                )
+                platform_key = f"{settings.UPDATES_KEY}*{p.name}*{p.version}*platform"
 
                 platform = easy_dict.get(platform_key)
                 if platform is None:

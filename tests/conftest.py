@@ -64,8 +64,7 @@ def create_keypack():
 
 @pytest.fixture
 def db():
-    db = Storage()
-    return db
+    return Storage()
 
 
 @pytest.fixture
@@ -85,16 +84,14 @@ def loader():
 
 @pytest.fixture
 def parser():
-    parser = make_parser()
-    return parser
+    return make_parser()
 
 
 @pytest.fixture
 def pyu():
     t_config = TConfig()
     t_config.DATA_DIR = os.getcwd()
-    pyu = PyUpdater(t_config)
-    return pyu
+    return PyUpdater(t_config)
 
 
 @pytest.fixture

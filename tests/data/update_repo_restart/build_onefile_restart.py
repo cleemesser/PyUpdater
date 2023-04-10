@@ -41,9 +41,7 @@ def build(app):
     # Pyinstaller's --clean is not 'multiprocessing safe',
     # let's use our own cache
     os.environ["PYINSTALLER_CONFIG_DIR"] = os.path.join(home_dir, ".cache")
-    cmd = "pyupdater build -F {} --clean --path={} " "--app-version={} {}".format(
-        app[2], home_dir, app[1], app[0]
-    )
+    cmd = f"pyupdater build -F {app[2]} --clean --path={home_dir} --app-version={app[1]} {app[0]}"
     os.system(cmd)
 
 
@@ -74,7 +72,7 @@ def main(use_custom_dir, port, windowed, split_version):
     first = True
     # patch config_file for custom port number
     config_file = open("client_config.py", "rt").read()
-    config_file = re.sub(r"localhost:\d+", "localhost:%s" % port, config_file)
+    config_file = re.sub(r"localhost:\d+", f"localhost:{port}", config_file)
     # patch config_file for use_custom_dir
     if use_custom_dir:
         config_file += "\n    USE_CUSTOM_DIR = True\n"
@@ -82,15 +80,9 @@ def main(use_custom_dir, port, windowed, split_version):
     for s in scripts:
         build(s)
         if first:
-            if sys.platform == "win32":
-                ext = ".zip"
-            else:
-                ext = ".tar.gz"
-
+            ext = ".zip" if sys.platform == "win32" else ".tar.gz"
             # Build path to archive
-            archive_path = os.path.join(
-                "pyu-data", "new", "Acme-{}-4.1{}".format(get_system(), ext)
-            )
+            archive_path = os.path.join("pyu-data", "new", f"Acme-{get_system()}-4.1{ext}")
 
             if not os.path.exists(archive_path):
                 print("Archive did not build!")
@@ -113,7 +105,7 @@ def main(use_custom_dir, port, windowed, split_version):
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print(
-            "usage: %s <use_custom_dir> <port> <windowed> <split_version>" % sys.argv[0]
+            f"usage: {sys.argv[0]} <use_custom_dir> <port> <windowed> <split_version>"
         )
     else:
         main(

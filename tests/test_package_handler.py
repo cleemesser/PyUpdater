@@ -137,9 +137,7 @@ class TestPackage(object):
         assert p2.name is None
         assert p2.version is None
         assert p2.info["status"] is False
-        assert p2.info["reason"] == (
-            "Not a supported archive format: " "{}".format(test_file_2)
-        )
+        assert p2.info["reason"] == f"Not a supported archive format: {test_file_2}"
 
     def test_package_bad_version(self, shared_datadir):
         filename = "pyu-win-1.tar.gz"

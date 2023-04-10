@@ -75,12 +75,7 @@ class Patch(object):
 
         if self.ok:
             self.dst = os.path.abspath(self._filename)
-            _patch_name = "{}-{}-{}-{}".format(
-                self._pkg_info.name,
-                self._pkg_info.platform,
-                self._pkg_info.channel,
-                self.patch_num,
-            )
+            _patch_name = f"{self._pkg_info.name}-{self._pkg_info.platform}-{self._pkg_info.channel}-{self.patch_num}"
             self.patch_name = os.path.join(self._new_dir, _patch_name)
             self.basename = os.path.basename(self.patch_name)
             self.dst_filename = self._pkg_info.filename

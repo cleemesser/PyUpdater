@@ -18,11 +18,7 @@ class UnpaddedBase64Encoder(object):
         # The correct type of the padding depends on what the input is,
         # as base64 (and the decoder in general) is happy to take in both bytes and unicode.
 
-        if isinstance(data, bytes):
-            padding = b"="
-        else:
-            padding = u"="
-
+        padding = b"=" if isinstance(data, bytes) else u"="
         data += padding * ((4 - len(data) % 4) % 4)
 
         return base64.b64decode(data)

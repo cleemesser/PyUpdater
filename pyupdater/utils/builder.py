@@ -72,7 +72,7 @@ class Builder(object):  # pragma: no cover
         self._setup()
 
         temp_name = get_system()
-        spec_file_path = os.path.join(self.spec_dir, temp_name + ".spec")
+        spec_file_path = os.path.join(self.spec_dir, f"{temp_name}.spec")
 
         # Spec file used instead of python script
         if self.app_info["type"] == "spec":
@@ -144,26 +144,26 @@ class Builder(object):  # pragma: no cover
     def _make_spec(self, temp_name, spec_only=False):
         log.debug("App Info: %s", self.app_info)
 
-        self.pyi_args.append("--name={}".format(temp_name))
+        self.pyi_args.append(f"--name={temp_name}")
         if spec_only is True:
             log.debug("*** User generated spec file ***")
             log.debug("There could be errors")
-            self.pyi_args.append("--specpath={}".format(os.getcwd()))
+            self.pyi_args.append(f"--specpath={os.getcwd()}")
         else:
             # Place spec file in .pyupdater/spec
-            self.pyi_args.append("--specpath={}".format(self.spec_dir))
+            self.pyi_args.append(f"--specpath={self.spec_dir}")
 
         # Use hooks included in PyUpdater package
         hook_dir = get_hook_dir()
         log.debug("Hook directory: %s", hook_dir)
-        self.pyi_args.append("--additional-hooks-dir={}".format(hook_dir))
+        self.pyi_args.append(f"--additional-hooks-dir={hook_dir}")
 
         if self.args.pyi_log_info is False:
             self.pyi_args.append("--log-level=ERROR")
 
         self.pyi_args.append(self.app_info["name"])
 
-        log.debug("Make spec cmd: %s", " ".join([c for c in self.pyi_args]))
+        log.debug("Make spec cmd: %s", " ".join(list(self.pyi_args)))
         success = pyi_makespec(self.pyi_args)
         if success is False:
             log.error("PyInstaller > 3.0 needed for this python installation.")
@@ -191,12 +191,15 @@ class Builder(object):  # pragma: no cover
         if self.args.pyi_log_info is False:
             build_args.append("--log-level=ERROR")
 
-        build_args.append("--distpath={}".format(self.new_dir))
-        build_args.append("--workpath={}".format(self.work_dir))
-        build_args.append("-y")
-        build_args.append(spec_file_path)
-
-        log.debug("Build cmd: %s", " ".join([b for b in build_args]))
+        build_args.extend(
+            (
+                f"--distpath={self.new_dir}",
+                f"--workpath={self.work_dir}",
+                "-y",
+                spec_file_path,
+            )
+        )
+        log.debug("Build cmd: %s", " ".join(list(build_args)))
         build_args = [str(x) for x in build_args]
         pyi_build(build_args)
 
@@ -227,13 +230,13 @@ class Builder(object):  # pragma: no cover
     def _archive(self, temp_name):
         # Now archive the file
         with ChDir(self.new_dir):
-            if os.path.exists(temp_name + ".app"):
+            if os.path.exists(f"{temp_name}.app"):
                 log.debug("Got mac .app")
-                app_name = temp_name + ".app"
+                app_name = f"{temp_name}.app"
                 Builder._mac_binary_rename(app_name, self.app_name)
-            elif os.path.exists(temp_name + ".exe"):
+            elif os.path.exists(f"{temp_name}.exe"):
                 log.debug("Got win .exe")
-                app_name = temp_name + ".exe"
+                app_name = f"{temp_name}.exe"
             else:
                 app_name = temp_name
             version = self.args.app_version

@@ -36,7 +36,7 @@ def _name(obj):
 
 
 def _full_name(subpackage, obj):
-    return "{}.{}".format(subpackage.__name__, _name(obj))
+    return f"{subpackage.__name__}.{_name(obj)}"
 
 
 def _anchor(name):
@@ -77,10 +77,7 @@ def _replace_docstring_header(paragraph):
 def _doc(obj):
     doc = inspect.getdoc(obj) or ""
     doc = doc.strip()
-    if doc and "---" in doc:
-        return _replace_docstring_header(doc)
-    else:
-        return doc
+    return _replace_docstring_header(doc) if doc and "---" in doc else doc
 
 
 def _import_module(module_name):
@@ -113,11 +110,9 @@ def _import_module(module_name):
         # contained in `pdoc.import_path`.
         imp.find_module(module_name.split(".")[0], import_path)
 
-    if module_name in sys.modules:
-        return sys.modules[module_name]
-    else:
+    if module_name not in sys.modules:
         __import__(module_name)
-        return sys.modules[module_name]
+    return sys.modules[module_name]
 
 
 # ------------------------------------------------------------------------------
@@ -126,11 +121,8 @@ def _import_module(module_name):
 
 
 def _is_public(obj):
-    name = _name(obj) if not isinstance(obj, string_types) else obj
-    if name:
-        return not name.startswith("_")
-    else:
-        return True
+    name = obj if isinstance(obj, string_types) else _name(obj)
+    return not name.startswith("_") if name else True
 
 
 def _is_defined_in_package(obj, package):
@@ -145,15 +137,16 @@ def _is_defined_in_package(obj, package):
 
 def _iter_doc_members(obj, package=None):
     for _, member in inspect.getmembers(obj):
-        if _is_public(member):
-            if package is None or _is_defined_in_package(member, package):
-                yield member
+        if _is_public(member) and (
+            package is None or _is_defined_in_package(member, package)
+        ):
+            yield member
 
 
 def _iter_subpackages(package, subpackages):
     """Iterate through a list of subpackages."""
     for subpackage in subpackages:
-        yield _import_module("{}.{}".format(package, subpackage))
+        yield _import_module(f"{package}.{subpackage}")
 
 
 def _iter_vars(mod):
@@ -174,9 +167,9 @@ def _iter_classes(subpackage):
 
 def _iter_methods(klass, package=None):
     for member in _iter_doc_members(klass, package):
-        if inspect.isfunction(member) or inspect.ismethod(member):
-            if inspect.isdatadescriptor(member):
-                continue
+        if (
+            inspect.isfunction(member) or inspect.ismethod(member)
+        ) and not inspect.isdatadescriptor(member):
             yield member
 
 
@@ -258,19 +251,16 @@ def _generate_preamble(package, subpackages):
     for subpackage in _iter_subpackages(package, subpackages):
         subpackage_name = subpackage.__name__
 
-        yield "### " + _link(subpackage_name)
+        yield f"### {_link(subpackage_name)}"
 
         # List of top-level functions in the subpackage.
         for func in _iter_functions(subpackage):
-            yield "* " + _link(
-                _full_name(subpackage, func),
-                _anchor(_function_header(subpackage, func)),
-            )
+            yield f"* {_link(_full_name(subpackage, func), _anchor(_function_header(subpackage, func)))}"
 
         # All public classes.
         for klass in _iter_classes(subpackage):
             # Class documentation.
-            yield "* " + _link(_full_name(subpackage, klass))
+            yield f"* {_link(_full_name(subpackage, klass))}"
 
         yield ""
 
@@ -284,25 +274,25 @@ def _generate_paragraphs(package, subpackages):
     for subpackage in _iter_subpackages(package, subpackages):
         subpackage_name = subpackage.__name__
 
-        yield "## {}".format(subpackage_name)
+        yield f"## {subpackage_name}"
 
         # Subpackage documentation.
         yield _doc(_import_module(subpackage_name))
 
         # List of top-level functions in the subpackage.
         for func in _iter_functions(subpackage):
-            yield "##### " + _doc_function(subpackage, func)
+            yield f"##### {_doc_function(subpackage, func)}"
 
         # All public classes.
         for klass in _iter_classes(subpackage):
 
             # Class documentation.
-            yield "### {}".format(_full_name(subpackage, klass))
+            yield f"### {_full_name(subpackage, klass)}"
             yield _doc(klass)
 
             yield "#### Methods"
             for method in _iter_methods(klass, package):
-                yield "##### " + _doc_method(klass, method)
+                yield f"##### {_doc_method(klass, method)}"
 
                 # Uncomment to document properties.
                 # yield "#### Properties"
@@ -319,16 +309,16 @@ def _print_paragraph(paragraph):
 
 
 def generate_api_doc(package, subpackages, path=None):
-    out = ""
-    for paragraph in _generate_preamble(package, subpackages):
-        out += _print_paragraph(paragraph)
+    out = "".join(
+        _print_paragraph(paragraph)
+        for paragraph in _generate_preamble(package, subpackages)
+    )
     for paragraph in _generate_paragraphs(package, subpackages):
         out += _print_paragraph(paragraph)
     if path is None:
         return out
-    else:
-        with open(path, "w") as f:
-            f.write(out)
+    with open(path, "w") as f:
+        f.write(out)
 
 
 def main():

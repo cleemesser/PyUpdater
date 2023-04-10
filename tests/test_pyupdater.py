@@ -97,12 +97,7 @@ class TestExecutionExtraction(object):
             with open("pyu.log", "w") as f:
                 f.write("")
 
-            cmd = "python build_onefile_extract.py %s %s %s %s" % (
-                custom_dir,
-                port,
-                windowed,
-                split_version,
-            )
+            cmd = f"python build_onefile_extract.py {custom_dir} {port} {windowed} {split_version}"
             os.system(cmd)
 
             # Moving all files from the deploy directory to the cwd
@@ -123,13 +118,11 @@ class TestExecutionExtraction(object):
 
             app_run_command = app_name
             if sys.platform != "win32":
-                app_run_command = "./{}".format(app_name)
+                app_run_command = f"./{app_name}"
 
             if sys.platform == "darwin" and windowed:
-                app_run_command = "./{}.app/Contents/MacOS/{}".format(
-                    app_name, app_name
-                )
-                app_name = "{}.app".format(app_name)
+                app_run_command = f"./{app_name}.app/Contents/MacOS/{app_name}"
+                app_name = f"{app_name}.app"
 
             if custom_dir:
                 # update with custom_dir is multiprocessing-safe
@@ -212,12 +205,7 @@ class TestExecutionExtraction(object):
             with open("pyu.log", "w") as f:
                 f.write("")
 
-            cmd = "python build_onedir_extract.py %s %s %s %s" % (
-                custom_dir,
-                port,
-                windowed,
-                split_version,
-            )
+            cmd = f"python build_onedir_extract.py {custom_dir} {port} {windowed} {split_version}"
             os.system(cmd)
 
             # Moving all files from the deploy directory to the cwd
@@ -234,32 +222,28 @@ class TestExecutionExtraction(object):
 
             dir_name = "Acme"
             if not os.path.exists(dir_name):
-                dir_name = dir_name + ".app"
+                dir_name += ".app"
 
             assert os.path.exists(dir_name)
             assert os.path.isdir(dir_name)
 
             app_name = "Acme"
-            if sys.platform == "darwin" and windowed:
-                pass
-            else:
+            if sys.platform != "darwin" or not windowed:
                 app_name = os.path.join(dir_name, app_name)
 
             if sys.platform != "win32":
-                app_name = "./{}".format(app_name)
+                app_name = f"./{app_name}"
 
             if sys.platform == "win32":
                 app_name += ".exe"
 
             app_run_command = app_name
             if sys.platform != "win32":
-                app_run_command = "./{}".format(app_name)
+                app_run_command = f"./{app_name}"
 
             if sys.platform == "darwin" and windowed:
-                app_run_command = "./{}.app/Contents/MacOS/{}".format(
-                    app_name, app_name
-                )
-                app_name = "{}.app".format(app_name)
+                app_run_command = f"./{app_name}.app/Contents/MacOS/{app_name}"
+                app_name = f"{app_name}.app"
 
             if custom_dir:
                 # update with custom_dir is multiprocessing-safe
@@ -343,12 +327,7 @@ class TestExecutionRestart(object):
             with open("pyu.log", "w") as f:
                 f.write("")
 
-            cmd = "python build_onefile_restart.py %s %s %s %s" % (
-                custom_dir,
-                port,
-                windowed,
-                split_version,
-            )
+            cmd = f"python build_onefile_restart.py {custom_dir} {port} {windowed} {split_version}"
             os.system(cmd)
 
             # Moving all files from the deploy directory to the cwd
@@ -369,13 +348,11 @@ class TestExecutionRestart(object):
 
             app_run_command = app_name
             if sys.platform != "win32":
-                app_run_command = "./{}".format(app_name)
+                app_run_command = f"./{app_name}"
 
             if sys.platform == "darwin" and windowed:
-                app_run_command = "./{}.app/Contents/MacOS/{}".format(
-                    app_name, app_name
-                )
-                app_name = "{}.app".format(app_name)
+                app_run_command = f"./{app_name}.app/Contents/MacOS/{app_name}"
+                app_name = f"{app_name}.app"
 
             if custom_dir:
                 # update with custom_dir is multiprocessing-safe
@@ -453,12 +430,7 @@ class TestExecutionRestart(object):
             with open("pyu.log", "w") as f:
                 f.write("")
 
-            cmd = "python build_onedir_restart.py %s %s %s %s" % (
-                custom_dir,
-                port,
-                windowed,
-                split_version,
-            )
+            cmd = f"python build_onedir_restart.py {custom_dir} {port} {windowed} {split_version}"
             os.system(cmd)
 
             # Moving all files from the deploy directory to the cwd
@@ -475,32 +447,28 @@ class TestExecutionRestart(object):
 
             dir_name = "Acme"
             if not os.path.exists(dir_name):
-                dir_name = dir_name + ".app"
+                dir_name += ".app"
 
             assert os.path.exists(dir_name)
             assert os.path.isdir(dir_name)
 
             app_name = "Acme"
-            if sys.platform == "darwin" and windowed:
-                pass
-            else:
+            if sys.platform != "darwin" or not windowed:
                 app_name = os.path.join(dir_name, app_name)
 
             if sys.platform != "win32":
-                app_name = "./{}".format(app_name)
+                app_name = f"./{app_name}"
 
             if sys.platform == "win32":
                 app_name += ".exe"
 
             app_run_command = app_name
             if sys.platform != "win32":
-                app_run_command = "./{}".format(app_name)
+                app_run_command = f"./{app_name}"
 
             if sys.platform == "darwin" and windowed:
-                app_run_command = "./{}.app/Contents/MacOS/{}".format(
-                    app_name, app_name
-                )
-                app_name = "{}.app".format(app_name)
+                app_run_command = f"./{app_name}.app/Contents/MacOS/{app_name}"
+                app_name = f"{app_name}.app"
 
             if custom_dir:
                 # update with custom_dir is multiprocessing-safe

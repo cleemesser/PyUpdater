@@ -111,12 +111,11 @@ class Keys(object):
         app_pri = app_pri.decode()
         app_pub = app_pub.decode()
 
-        keypack = {
+        return {
             "upload": {"app_public": app_pub, "signature": signature},
             "client": {"offline_public": off_pub},
             "repo": {"app_private": app_pri},
         }
-        return keypack
 
     def _load_offline_keys(self, name):
         if name not in self.key_data.keys():
@@ -145,9 +144,7 @@ class KeyImporter(object):
     @staticmethod
     def _look_for_keypack():
         files = os.listdir(os.getcwd())
-        if settings.KEYPACK_FILENAME not in files:
-            return False
-        return True
+        return settings.KEYPACK_FILENAME in files
 
     @staticmethod
     def _load_keypack():

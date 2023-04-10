@@ -99,11 +99,7 @@ class TestUploader(object):
         # Don't mind the name, should only contain 1 plugin
         upload_plugins = [u for u in uploaders if u.name == upload_plugin_type]
 
-        if sys.version_info[1] == 5:
-            data_dir = str(shared_datadir)
-        else:
-            data_dir = shared_datadir
-
+        data_dir = str(shared_datadir) if sys.version_info[1] == 5 else shared_datadir
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 

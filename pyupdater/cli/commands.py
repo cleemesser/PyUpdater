@@ -132,7 +132,7 @@ def _clean(*args):
         remove_any(settings.USER_DATA_FOLDER)
         log.info("Removed %s folder", settings.USER_DATA_FOLDER)
 
-    if cleaned is True:
+    if cleaned:
         log.info("Clean complete...")
     else:
         log.info("Nothing to clean...")
@@ -186,7 +186,7 @@ def _cmd_settings(*args):  # pragma: no cover
         print_plugin_settings(ns.show_plugin, config)
 
     # If any changes have been made, save data to disk.
-    if save_config is True:
+    if save_config:
         cm.save_config(config)
         log.info("Saved config")
 
@@ -222,16 +222,14 @@ def _cmd_keys(*args):  # pragma: no cover
     check = check_repo_ex()
 
     ns = args[0]
-    # We try to prevent developers from creating root keys on the dev
-    # machines.
-    if ns.create_keys is True and ns.import_keys is True:
-        log.error("Only one options is allowed at a time")
-        return
+    if ns.create_keys is True:
+        if ns.import_keys is True:
+            log.error("Only one options is allowed at a time")
+            return
 
-    # Okay the actual check is pretty weak but we are all grown ups here :)
-    if ns.create_keys is True and check is True:
-        log.error("You can not create off-line keys on your dev machine")
-        return
+        if check is True:
+            log.error("You can not create off-line keys on your dev machine")
+            return
 
     # Can't import if we don't have a config to place it in.
     if ns.import_keys is True and check is False:
@@ -326,7 +324,7 @@ def _cmd_collect_debug_info(*args):  # pragma: no cover
     # A helper function that uploads the data to a private gist.
     def _upload(data):
         api = "https://api.github.com/"
-        gist_url = api + "gists"
+        gist_url = f"{api}gists"
         http = get_http_pool()
         headers = {
             "Accept": "application/vnd.github.v3+json",
@@ -384,7 +382,7 @@ def _cmd_plugins(*args):
     # By the way I just want to thank all the contributors and bug submitters.
     names = ["\n"]
     for n in plug_mgr.get_plugin_names():
-        out = "{} by {}\n".format(n["name"], n["author"])
+        out = f'{n["name"]} by {n["author"]}\n'
         names.append(out)
     output = "".join(names)
     log.info("Upload plugins:%s", output)
@@ -439,4 +437,4 @@ def _cmd_upload(*args):  # pragma: no cover
 
 # Print the version of PyUpdater to the console.
 def _cmd_version(*args):
-    print("PyUpdater {}".format(__version__))
+    print(f"PyUpdater {__version__}")

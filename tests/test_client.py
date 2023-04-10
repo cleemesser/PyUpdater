@@ -166,9 +166,7 @@ class TestDownload(object):
         assert update.app_name == "Acme"
         update.download(background=True)
         count = 0
-        while count < 61:
-            if update.is_downloaded() is True:
-                break
+        while count < 61 and update.is_downloaded() is not True:
             time.sleep(1)
             count += 1
         assert update.is_downloaded() is True
@@ -186,9 +184,7 @@ class TestDownload(object):
         count = 0
         assert update.download(background=True) is None
         assert update.download() is None
-        while count < 61:
-            if update.is_downloaded() is True:
-                break
+        while count < 61 and update.is_downloaded() is not True:
             time.sleep(1)
             count += 1
         assert update.is_downloaded() is True
