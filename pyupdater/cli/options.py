@@ -26,13 +26,11 @@ import argparse
 
 
 def make_parser():
-    parser = argparse.ArgumentParser(usage="%(prog)s ")
-    return parser
+    return argparse.ArgumentParser(usage="%(prog)s ")
 
 
 def make_subparser(parser):
-    subparsers = parser.add_subparsers(help="commands", dest="command")
-    return subparsers
+    return parser.add_subparsers(help="commands", dest="command")
 
 
 def _build_make_spec_common(subparser):

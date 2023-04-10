@@ -202,9 +202,7 @@ class Patcher(object):
         # and file size.
         for p in required_patches:
             info = {}
-            platform_key = "{}*{}*{}*{}".format(
-                settings.UPDATES_KEY, self.name, str(p), self.platform
-            )
+            platform_key = f"{settings.UPDATES_KEY}*{self.name}*{str(p)}*{self.platform}"
             platform_info = self.star_access_update_data.get(platform_key)
 
             try:
@@ -239,27 +237,19 @@ class Patcher(object):
             fall_back = True
 
         if fall_back is True:
-            if len(required_patches) > 4:
-                return False
-            else:
-                return True
+            return len(required_patches) <= 4
         else:
             return Patcher._calc_diff(total_patch_size, latest_file_size)
 
     @staticmethod
     def _calc_diff(patch_size, file_size):
-        if patch_size < file_size:
-            return True
-        else:
-            return False
+        return patch_size < file_size
 
     def _get_required_patches(self, name):
-        # Gathers patch name, hash & URL
-        needed_patches = []
         try:
             # Get list of Version objects initialized with keys
             # from update manifest
-            version_key = "{}*{}".format(settings.UPDATES_KEY, name)
+            version_key = f"{settings.UPDATES_KEY}*{name}"
             version_info = self.star_access_update_data(version_key)
             versions = map(Version, version_info.keys())
         except KeyError:  # pragma: no cover
@@ -272,10 +262,7 @@ class Patcher(object):
         versions = [v for v in versions if v.channel == self.channel]
 
         log.debug("Getting required patches")
-        for i in versions:
-            if i > self.current_version:
-                needed_patches.append(i)
-
+        needed_patches = [i for i in versions if i > self.current_version]
         # Used to guarantee patches are only added once
         needed_patches = list(set(needed_patches))
 
@@ -368,13 +355,7 @@ class Patcher(object):
     def _write_update_to_disk(self):  # pragma: no cover
         # Writes updated binary to disk
         log.debug("Writing update to disk")
-        filename_key = "{}*{}*{}*{}*{}".format(
-            settings.UPDATES_KEY,
-            self.name,
-            self.latest_version,
-            self.platform,
-            "filename",
-        )
+        filename_key = f"{settings.UPDATES_KEY}*{self.name}*{self.latest_version}*{self.platform}*filename"
         filename = self.star_access_update_data.get(filename_key)
 
         if filename is None:
@@ -416,9 +397,7 @@ class Patcher(object):
             _size = "patch_size"
 
         # Returns filename and hash for given name and version
-        platform_key = "{}*{}*{}*{}".format(
-            settings.UPDATES_KEY, name, version, self.platform
-        )
+        platform_key = f"{settings.UPDATES_KEY}*{name}*{version}*{self.platform}"
         platform_info = self.star_access_update_data.get(platform_key)
 
         info = {}
@@ -432,5 +411,5 @@ class Patcher(object):
             file_size = platform_info.get(_size)
             log.debug("Current Info - File size: %s", file_size)
             _info = dict(filename=filename, file_hash=file_hash, file_size=file_size)
-            info.update(_info)
+            info |= _info
         return info

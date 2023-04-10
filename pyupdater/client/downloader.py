@@ -96,7 +96,7 @@ class FileDownloader(object):
             raise FileDownloaderError("No urls provided", expected=True)
         # User may have accidentally passed a
         # string to the urls parameter
-        if isinstance(self.urls, list) is False:
+        if not isinstance(self.urls, list):
             raise FileDownloaderError("Must pass list of urls", expected=True)
 
         try:
@@ -123,7 +123,7 @@ class FileDownloader(object):
         # Hold all binary data once file has been downloaded
         self.file_binary_data = []
         # Temporary file to hold large download data
-        self.file_binary_path = self.filename + ".part"
+        self.file_binary_path = f"{self.filename}.part"
 
         # Total length of data to download.
         self.content_length = None
@@ -141,7 +141,7 @@ class FileDownloader(object):
     def _get_http_pool(self, secure=True):
         if secure:
             _http = urllib3.PoolManager(
-                cert_reqs=str("CERT_REQUIRED"),
+                cert_reqs="CERT_REQUIRED",
                 ca_certs=certifi.where(),
                 timeout=self.http_timeout,
             )
@@ -163,7 +163,7 @@ class FileDownloader(object):
             _headers = urllib3.util.make_headers(**urllib_headers)
             _headers.update(other_headers)
             _http.headers.update(_headers)
-        log.debug("HTTP Timeout is " + str(self.http_timeout))
+        log.debug(f"HTTP Timeout is {str(self.http_timeout)}")
         return _http
 
     def download_verify_write(self):
@@ -205,20 +205,15 @@ class FileDownloader(object):
                 None - If any verification didn't pass
         """
         check = self._download_to_storage(check_hash=True)
-        if check is True or check is None:
-            if self.file_binary_type == "memory":
-                if self.file_binary_data:
-                    return b"".join(self.file_binary_data)
-                else:
-                    return None
-            else:
-                log.warning(
-                    "Downloaded file is very large, reading it"
-                    " in to memory may crash the app"
-                )
-                return open(self.file_binary_path, "rb").read()
-        else:
+        if check is not True and check is not None:
             return None
+        if self.file_binary_type == "memory":
+            return b"".join(self.file_binary_data) if self.file_binary_data else None
+        log.warning(
+            "Downloaded file is very large, reading it"
+            " in to memory may crash the app"
+        )
+        return open(self.file_binary_path, "rb").read()
 
     @staticmethod
     def _best_block_size(elapsed_time, _bytes):
@@ -230,9 +225,7 @@ class FileDownloader(object):
         rate = _bytes / elapsed_time
         if rate > new_max:
             return int(new_max)
-        if rate < new_min:
-            return int(new_min)
-        return int(rate)
+        return int(new_min) if rate < new_min else int(rate)
 
     def _download_to_storage(self, check_hash=True):
         data = self._create_response()
@@ -252,12 +245,9 @@ class FileDownloader(object):
         else:
             self.file_binary_type = "memory"
 
-        # Setting start point to show progress
-        received_data = 0
-
         start_download = time.time()
         block = data.read(1)
-        received_data += len(block)
+        received_data = 0 + len(block)
         if self.file_binary_type == "memory":
             self.file_binary_data = [block]
         else:
@@ -388,12 +378,11 @@ class FileDownloader(object):
                 # to help fix other http related issues
                 log.debug(str(e), exc_info=True)
             else:
-                if data.status != 200:
-                    log.debug("Received a non-200 response %d", data.status)
-                    data = None
-                else:
+                if data.status == 200:
                     break
 
+                log.debug("Received a non-200 response %d", data.status)
+                data = None
         if data is not None:
             log.debug("Resource URL: %s", file_url)
         else:
@@ -430,9 +419,7 @@ class FileDownloader(object):
         rate = float(current) / dif
         eta = int((float(total) - float(current)) / rate)
         (eta_mins, eta_secs) = divmod(eta, 60)
-        if eta_mins > 99:
-            return "--:--"
-        return "%02d:%02d" % (eta_mins, eta_secs)
+        return "--:--" if eta_mins > 99 else "%02d:%02d" % (eta_mins, eta_secs)
 
     @staticmethod
     def _calc_progress_percent(received, total):

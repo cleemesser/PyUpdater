@@ -64,6 +64,6 @@ UPDATES_KEY = "updates"
 UPDATE_FOLDER = "update"
 
 # Name of version file in online repo
-VERSION_FILE_FILENAME = "versions-{}.gz".format(system.get_system())
+VERSION_FILE_FILENAME = f"versions-{system.get_system()}.gz"
 VERSION_FILE_FILENAME_COMPAT = "versions.gz"
 KEY_FILE_FILENAME = "keys.gz"

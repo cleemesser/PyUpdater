@@ -163,12 +163,12 @@ class Package(object):
         package_basename = os.path.basename(package)
 
         if not os.path.exists(package):
-            msg = "{} does not exist".format(package)
+            msg = f"{package} does not exist"
             log.debug(msg)
             self.info["reason"] = msg
             return
         if package_basename in self.ignored_files:
-            msg = "Ignored file: {}".format(package_basename)
+            msg = f"Ignored file: {package_basename}"
             log.debug(msg)
             self.info["reason"] = msg
             return
@@ -176,7 +176,7 @@ class Package(object):
             os.path.splitext(package_basename)[1].lower()
             not in self.supported_extensions
         ):
-            msg = "Not a supported archive format: {}".format(package_basename)
+            msg = f"Not a supported archive format: {package_basename}"
             self.info["reason"] = msg
             log.debug(msg)
             return

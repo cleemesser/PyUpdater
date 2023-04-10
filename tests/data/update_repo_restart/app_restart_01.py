@@ -40,12 +40,12 @@ def cb(status):
     percent = status.get("percent_complete")
     time = status.get("time")
     if percent is not None:
-        out += "{}%".format(percent)
+        out += f"{percent}%"
     if time is not None:
-        out += " - {}".format(time)
-    if len(out) == 0:
+        out += f" - {time}"
+    if not out:
         out = "Nothing yet..."
-    sys.stdout.write("\r{}".format(out))
+    sys.stdout.write(f"\r{out}")
     sys.stdout.flush()
 
 
@@ -72,7 +72,7 @@ def main():
             success = update.download()
             if success is True:
                 break
-            print("Retry Download. Count {}".format(retry_count + 1))
+            print(f"Retry Download. Count {retry_count + 1}")
             retry_count += 1
 
         if success:

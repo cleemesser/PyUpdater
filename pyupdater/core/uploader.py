@@ -73,10 +73,7 @@ class Uploader(object):
             except OSError:
                 _files = []
 
-            files = []
-            for f in _files:
-                files.append(os.path.join(self.deploy_dir, f))
-
+            files = [os.path.join(self.deploy_dir, f) for f in _files]
             self.files = remove_dot_files(files)
 
     def get_plugin_names(self):
@@ -94,7 +91,7 @@ class Uploader(object):
 
         """
         self.keep = keep
-        if isinstance(requested_uploader, str) is False:
+        if not isinstance(requested_uploader, str):
             raise UploaderError("Must pass str to set_uploader", expected=True)
 
         self.uploader = self.plg_mgr.get_plugin(requested_uploader, init=True)
@@ -104,7 +101,7 @@ class Uploader(object):
                 "Requested uploader is not installed", expected=True
             )
 
-        msg = "Requested uploader: {}".format(requested_uploader)
+        msg = f"Requested uploader: {requested_uploader}"
         log.debug(msg)
 
     def upload(self, files=None):
@@ -119,12 +116,10 @@ class Uploader(object):
 
         for f in self.files:
             basename = os.path.basename(f)
-            msg = "\n\nUploading: {}".format(basename)
-            msg2 = " - File {} of {}\n".format(files_completed, file_count)
+            msg = f"\n\nUploading: {basename}"
+            msg2 = f" - File {files_completed} of {file_count}\n"
             print(msg + msg2)
-            complete = self.uploader.upload_file(f)
-
-            if complete:
+            if complete := self.uploader.upload_file(f):
                 log.debug("%s uploaded successfully", basename)
                 if self.keep is False:
                     remove_any(f)
@@ -133,16 +128,15 @@ class Uploader(object):
                 log.debug("%s failed to upload.  will retry", basename)
                 failed_uploads.append(f)
 
-        if len(failed_uploads) > 0:
+        if failed_uploads:
             failed_uploads = self._retry_upload(failed_uploads)
 
         if len(failed_uploads) < 1:
             return True
-        else:
-            log.error("The following files were not uploaded")
-            for i in failed_uploads:
-                log.error("%s failed to upload", os.path.basename(i))
-            return False
+        log.error("The following files were not uploaded")
+        for i in failed_uploads:
+            log.error("%s failed to upload", os.path.basename(i))
+        return False
 
     def _retry_upload(self, failed_uploads):
         # Takes list of failed downloads and tries to re upload them
@@ -151,10 +145,9 @@ class Uploader(object):
         failed_count = len(retry)
         count = 1
         for f in retry:
-            msg = "Retyring: {} - File {} of {}".format(f, count, failed_count)
+            msg = f"Retyring: {f} - File {count} of {failed_count}"
             log.info(msg)
-            complete = self.uploader.upload_file(f)
-            if complete:
+            if complete := self.uploader.upload_file(f):
                 log.debug("%s uploaded on retry", f)
                 if self.keep is False:
                     remove_any(f)
@@ -167,8 +160,8 @@ class Uploader(object):
 
 # noinspection PyProtectedMember
 class AbstractBaseUploaderMeta(type):
-    def __call__(cls, *args, **kwargs):
-        obj = type.__call__(cls, *args, **kwargs)
+    def __call__(self, *args, **kwargs):
+        obj = type.__call__(self, *args, **kwargs)
         # We are using this meta class to ensure plugin authors have
         # a plugin name & author name as class attributes.
         obj._check_attributes()  # noqa
@@ -199,7 +192,7 @@ class BaseUploader(object, metaclass=AbstractBaseUploaderMeta):
             config (dict): config dict for plugin
         """
         raise NotImplementedError(
-            "{} by {} must implemented in " "subclass.".format(self.name, self.author)
+            f"{self.name} by {self.author} must implemented in subclass."
         )
 
     def set_config(self, config):
@@ -213,7 +206,7 @@ class BaseUploader(object, metaclass=AbstractBaseUploaderMeta):
 
         """
         raise NotImplementedError(
-            "{} by {} must implemented in " "subclass.".format(self.name, self.author)
+            f"{self.name} by {self.author} must implemented in subclass."
         )
 
     def upload_file(self, filename):
@@ -230,5 +223,5 @@ class BaseUploader(object, metaclass=AbstractBaseUploaderMeta):
                 False - Upload Failed
         """
         raise NotImplementedError(
-            "{} by {} must implemented in " "subclass.".format(self.name, self.author)
+            f"{self.name} by {self.author} must implemented in subclass."
         )

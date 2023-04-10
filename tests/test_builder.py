@@ -36,10 +36,7 @@ from pyupdater.utils.config import ConfigManager
 
 CONFIG = {"APP_NAME": "PyUpdater Test", "COMPANY_NAME": "ACME", "UPDATE_PATCHES": True}
 
-if sys.platform == "win32":
-    EXT = ".zip"
-else:
-    EXT = ".tar.gz"
+EXT = ".zip" if sys.platform == "win32" else ".tar.gz"
 
 
 @pytest.mark.usefixtures("cleandir")
@@ -58,4 +55,4 @@ class TestExternalLib(object):
             f.write("this is a test")
         ex = ExternalLib("test", "0.1")
         ex.archive()
-        assert os.path.exists("test-{}-0.1{}".format(get_system(), EXT))
+        assert os.path.exists(f"test-{get_system()}-0.1{EXT}")

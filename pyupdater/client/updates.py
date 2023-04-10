@@ -96,7 +96,7 @@ def win_unhide_file(file):  # pragma: no cover
         raise ctypes.WinError()
 
 
-def win_run(command, args, admin=False):  # pragma: no cover
+def win_run(command, args, admin=False):    # pragma: no cover
 
     """
     In windows run a command, optionally as admin.
@@ -111,7 +111,7 @@ def win_run(command, args, admin=False):  # pragma: no cover
             fMask=shellcon.SEE_MASK_NOCLOSEPROCESS,
             lpVerb="runas",
             lpFile=command,
-            lpParameters=" ".join('"{}"'.format(arg) for arg in args),
+            lpParameters=" ".join(f'"{arg}"' for arg in args),
         )
     else:
         subprocess.Popen([command] + args)
@@ -139,9 +139,9 @@ def get_highest_version(name, plat, channel, easy_data, strict):
 
     # We grab all keys and return the version corresponding to the
     # channel passed to this function
-    version_key_alpha = "{}*{}*{}*{}".format("latest", name, "alpha", plat)
-    version_key_beta = "{}*{}*{}*{}".format("latest", name, "beta", plat)
-    version_key_stable = "{}*{}*{}*{}".format("latest", name, "stable", plat)
+    version_key_alpha = f"latest*{name}*alpha*{plat}"
+    version_key_beta = f"latest*{name}*beta*{plat}"
+    version_key_stable = f"latest*{name}*stable*{plat}"
     version = None
 
     version_options = []
@@ -173,13 +173,13 @@ def get_highest_version(name, plat, channel, easy_data, strict):
     if strict is False:
         return str(max(version_options))
 
-    if alpha_available is True and channel == "alpha":
+    if alpha_available and channel == "alpha":
         version = alpha
 
-    if beta_available is True and channel == "beta":
+    if beta_available and channel == "beta":
         version = beta
 
-    if stable_available is True and channel == "stable":
+    if stable_available and channel == "stable":
         version = stable
 
     if version is not None:
@@ -195,15 +195,15 @@ def gen_user_friendly_version(internal_version):
     v = list(map(int, internal_version.split(".")))
 
     # 1.2
-    version = "{}.{}".format(v[0], v[1])
+    version = f"{v[0]}.{v[1]}"
     if v[2] != 0:
         # 1.2.1
-        version += ".{}".format(v[2])
+        version += f".{v[2]}"
     if v[3] != 2:
         # 1.2.1 Alpha
-        version += " {}".format(channel[v[3]])
+        version += f" {channel[v[3]]}"
         if v[4] != 0:
-            version += " {}".format(v[4])
+            version += f" {v[4]}"
 
     return version
 
@@ -225,7 +225,7 @@ class Restarter(object):  # pragma: no cover
         self.strategy = kwargs.get("strategy", UpdateStrategy.DEFAULT)
         log.debug("Current App: %s", self.current_app)
         self.is_win = sys.platform == "win32"
-        if self.is_win is True and self.strategy == UpdateStrategy.OVERWRITE:
+        if self.is_win and self.strategy == UpdateStrategy.OVERWRITE:
             self.data_dir = kwargs.get("data_dir")
             self.bat_file = os.path.join(self.data_dir, "update.bat")
             self.vbs_file = os.path.join(self.data_dir, "invis.vbs")
@@ -253,7 +253,7 @@ class Restarter(object):  # pragma: no cover
             )
         else:
             needs_admin = requires_admin(self.current_app)
-        log.debug("Admin required to update={}".format(needs_admin))
+        log.debug(f"Admin required to update={needs_admin}")
         with io.open(self.bat_file, "w", encoding="utf-8") as bat:
             if is_folder:
                 bat.write(
@@ -303,7 +303,7 @@ DEL "%~f0"
             )
         else:
             needs_admin = requires_admin(self.current_app)
-        log.debug("Admin required to update={}".format(needs_admin))
+        log.debug(f"Admin required to update={needs_admin}")
         with io.open(self.bat_file, "w", encoding="utf-8") as bat:
             if is_folder:
                 bat.write(
@@ -486,9 +486,7 @@ class LibUpdate(object):
 
             False - File has not been downloaded.
         """
-        if self._is_downloading is True:
-            return False
-        return self._is_downloaded()
+        return False if self._is_downloading is True else self._is_downloaded()
 
     def download(self, background=False):
         """Downloads update
@@ -497,13 +495,11 @@ class LibUpdate(object):
 
             background (bool): Perform download in background thread
         """
-        if background is True:
-            if self._is_downloading is False:
-                self._is_downloading = True
+        if self._is_downloading is False:
+            self._is_downloading = True
+            if background is True:
                 threading.Thread(target=self._download).start()
-        else:
-            if self._is_downloading is False:
-                self._is_downloading = True
+            else:
                 return self._download()
 
     def extract(self):
@@ -542,9 +538,7 @@ class LibUpdate(object):
 
             (str) Filename with extension
         """
-        filename_key = "{}*{}*{}*{}*{}".format(
-            settings.UPDATES_KEY, name, version, platform, "filename"
-        )
+        filename_key = f"{settings.UPDATES_KEY}*{name}*{version}*{platform}*filename"
         filename = easy_data.get(filename_key)
 
         log.debug("Filename for %s-%s: %s", name, version, filename)
@@ -556,9 +550,7 @@ class LibUpdate(object):
                 self._download_status = True
             else:
                 log.debug("Starting patch download")
-                patch_success = False
-                if self.channel == "stable":
-                    patch_success = self._patch_update()
+                patch_success = self._patch_update() if self.channel == "stable" else False
                 # Tested elsewhere
                 if patch_success:  # pragma: no cover
                     self._download_status = True
@@ -566,11 +558,10 @@ class LibUpdate(object):
                 else:
                     log.debug("Patch update failed")
                     log.debug("Starting full download")
-                    update_success = self._full_update()
-                    if update_success:
+                    if update_success := self._full_update():
                         self._download_status = True
                         log.debug("Full download successful")
-                    else:  # pragma: no cover
+                    else:
                         log.debug("Full download failed")
 
         self._is_downloading = False
@@ -585,38 +576,35 @@ class LibUpdate(object):
             if not os.access(self.filename, os.R_OK):
                 raise ClientError("Permissions Error", expected=True)
 
-            if self._verify_file_hash():
-                log.debug("Extracting Update")
-                archive_ext = os.path.splitext(self.filename)[1].lower()
-
-                if archive_ext in [".gz", ".bz2"]:
-                    try:
-                        mode = "r:{}".format(archive_ext[1:])
-                        with tarfile.open(self.filename, mode) as tfile:
-                            # Extract file update to current
-                            # directory.
-                            tfile.extractall()
-                    except Exception as err:  # pragma: no cover
-                        log.debug(err, exc_info=True)
-                        raise ClientError("Error reading gzip file", expected=True)
-                elif archive_ext == ".zip":
-                    try:
-                        with zipfile.ZipFile(self.filename, "r") as zfile:
-                            # Extract update file to current
-                            # directory.
-                            zfile.extractall()
-                    except Exception as err:  # pragma: no cover
-                        log.debug(err, exc_info=True)
-                        raise ClientError("Error reading zip file", expected=True)
-                else:
-                    raise ClientError("Unknown file type")
-            else:
+            if not self._verify_file_hash():
                 raise ClientError("Update archive is corrupt")
+            log.debug("Extracting Update")
+            archive_ext = os.path.splitext(self.filename)[1].lower()
+
+            if archive_ext in [".gz", ".bz2"]:
+                try:
+                    mode = f"r:{archive_ext[1:]}"
+                    with tarfile.open(self.filename, mode) as tfile:
+                        # Extract file update to current
+                        # directory.
+                        tfile.extractall()
+                except Exception as err:  # pragma: no cover
+                    log.debug(err, exc_info=True)
+                    raise ClientError("Error reading gzip file", expected=True)
+            elif archive_ext == ".zip":
+                try:
+                    with zipfile.ZipFile(self.filename, "r") as zfile:
+                        # Extract update file to current
+                        # directory.
+                        zfile.extractall()
+                except Exception as err:  # pragma: no cover
+                    log.debug(err, exc_info=True)
+                    raise ClientError("Error reading zip file", expected=True)
+            else:
+                raise ClientError("Unknown file type")
 
     def _get_file_hash_from_manifest(self):
-        hash_key = "{}*{}*{}*{}*{}".format(
-            self._updates_key, self.name, self.latest, self.platform, "file_hash"
-        )
+        hash_key = f"{self._updates_key}*{self.name}*{self.latest}*{self.platform}*file_hash"
         return self.easy_data.get(hash_key)
 
     # Must be called from directory where file is located
@@ -633,10 +621,7 @@ class LibUpdate(object):
             log.debug(err, exc_info=True)
             return False
 
-        if file_hash == get_hash(data):
-            return True
-        else:
-            return False
+        return file_hash == get_hash(data)
 
     # Checks if latest update is already downloaded
     def _is_downloaded(self):
@@ -703,11 +688,10 @@ class LibUpdate(object):
                     headers=self.headers,
                     http_timeout=self.http_timeout,
                 )
-            result = fd.download_verify_write()
-            if result:
+            if result := fd.download_verify_write():
                 log.debug("Download Complete")
                 return True
-            else:  # pragma: no cover
+            else:
                 log.debug("Failed To Download Latest Version")
                 return False
 
@@ -771,11 +755,13 @@ class AppUpdate(LibUpdate):  # pragma: no cover
 
     def _overwrite(self):
         # Unix: Overwrites the running applications binary
-        if get_system() == "mac":
-            if self._current_app_dir.endswith("MacOS") is True:
-                log.debug("Looks like we're dealing with a Mac Gui")
-                temp_dir = get_mac_dot_app_dir(self._current_app_dir)
-                self._current_app_dir = temp_dir
+        if (
+            get_system() == "mac"
+            and self._current_app_dir.endswith("MacOS") is True
+        ):
+            log.debug("Looks like we're dealing with a Mac Gui")
+            temp_dir = get_mac_dot_app_dir(self._current_app_dir)
+            self._current_app_dir = temp_dir
 
         app_update = os.path.join(self.update_folder, self.name)
 
@@ -812,25 +798,23 @@ class AppUpdate(LibUpdate):  # pragma: no cover
     def _restart(self):
         log.debug("Restarting")
         current_app = os.path.join(self._current_app_dir, self.name)
-        if get_system() == "mac":
-            # Must be dealing with Mac .app application
-            if not os.path.exists(current_app):
-                log.debug("Must be a .app bundle")
-                current_app += ".app"
-                mac_app_binary_dir = os.path.join(current_app, "Contents", "MacOS")
-                _file = os.listdir(mac_app_binary_dir)
+        if get_system() == "mac" and not os.path.exists(current_app):
+            log.debug("Must be a .app bundle")
+            current_app += ".app"
+            mac_app_binary_dir = os.path.join(current_app, "Contents", "MacOS")
+            _file = os.listdir(mac_app_binary_dir)
 
-                # We are making an assumption here that only 1
-                # executable will be in the MacOS folder.
-                current_app = os.path.join(mac_app_binary_dir, sys.executable)
+            # We are making an assumption here that only 1
+            # executable will be in the MacOS folder.
+            current_app = os.path.join(mac_app_binary_dir, sys.executable)
 
         r = Restarter(current_app, name=self.name)
         r.process()
 
     def _win_rename(self):
-        exe_name = self.name + ".exe"
+        exe_name = f"{self.name}.exe"
         current_app = os.path.join(self._current_app_dir, exe_name)
-        old_exe_name = exe_name + ".old"
+        old_exe_name = f"{exe_name}.old"
         old_app = os.path.join(self._current_app_dir, old_exe_name)
         updated_app = os.path.join(self.update_folder, exe_name)
 
@@ -892,7 +876,7 @@ class AppUpdate(LibUpdate):  # pragma: no cover
         # Windows: Moves update to current directory of running
         #                 application then restarts application using
         #                 new update.
-        exe_name = self.name + ".exe"
+        exe_name = f"{self.name}.exe"
         current_app = os.path.join(self._current_app_dir, exe_name)
         updated_app = os.path.join(self.update_folder, exe_name)
 
@@ -912,7 +896,7 @@ class AppUpdate(LibUpdate):  # pragma: no cover
         #          application then restarts application using
         #          new update.
 
-        exe_name = self.name + ".exe"
+        exe_name = f"{self.name}.exe"
         current_app = os.path.join(self._current_app_dir, exe_name)
         updated_app = os.path.join(self.update_folder, exe_name)
 

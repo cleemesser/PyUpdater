@@ -147,11 +147,7 @@ class KeyHandler(object):
     def _write_update_data(self, data, split_version):
         log.debug("Saved version meta data")
 
-        if split_version:
-            version_file = self.version_file
-        else:
-            version_file = self.version_file_compat
-
+        version_file = self.version_file if split_version else self.version_file_compat
         # Gzip update date
         with gzip.open(version_file, "wb") as f:
             new_data = json.dumps(data)

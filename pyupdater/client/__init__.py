@@ -111,9 +111,8 @@ class Client(object):
         # 3rd Party downloader
         self.downloader = kwargs.get("downloader")
 
-        if headers is not None:
-            if not isinstance(headers, dict):
-                raise ClientError("headers argument must be a dict", expected=True)
+        if headers is not None and not isinstance(headers, dict):
+            raise ClientError("headers argument must be a dict", expected=True)
 
         # String: Name of binary to update
         self.name = None
@@ -264,10 +263,6 @@ class Client(object):
         version = _Version(version)
         self.version = str(version)
 
-        # Will be set to true if we are updating the currently
-        # running app and not an app's asset
-        app = False
-
         if self.ready is False:
             # No json data is loaded.
             # User may need to call refresh
@@ -281,11 +276,7 @@ class Client(object):
             log.debug("Failed version file verification")
             return None
 
-        # If we are an app we will need restart functionality, so we'll
-        # user AppUpdate instead of LibUpdate
-        if self.FROZEN is True and self.name == self.app_name:
-            app = True
-
+        app = self.FROZEN is True and self.name == self.app_name
         log.debug("Checking for %s updates...", name)
         latest = get_highest_version(
             name, self.platform, channel, self.easy_data, strict
@@ -327,16 +318,11 @@ class Client(object):
             "strategy": self.strategy,
         }
 
-        data.update(self._gen_file_downloader_options())
+        data |= self._gen_file_downloader_options()
 
         # Return update object with which handles downloading,
         # extracting updates
-        if app is True:
-            # AppUpdate is a subclass of LibUpdate that add methods
-            # to restart the application
-            return AppUpdate(data)
-        else:
-            return LibUpdate(data)
+        return AppUpdate(data) if app else LibUpdate(data)
 
     def add_progress_hook(self, cb):
         """Add a download progress callback function to the list of progress
@@ -593,7 +579,7 @@ class Client(object):
         # need to add the resource name to the end of the request.
         for u in urls:
             if not u.endswith("/"):
-                sanitized_urls.append(u + "/")
+                sanitized_urls.append(f"{u}/")
             else:
                 sanitized_urls.append(u)
         # Removing duplicates

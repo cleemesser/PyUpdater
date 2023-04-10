@@ -38,17 +38,14 @@ def print_plugin_settings(plugin_name, config):  # pragma: no cover
     pm = PluginManager(config)
     config = pm.get_plugin_settings(plugin_name)
     if len(config.keys()) == 0:
-        print("No config found for {}".format(plugin_name))
+        print(f"No config found for {plugin_name}")
     else:
         print(plugin_name)
         print(config)
 
 
 def setup_appname(config):  # pragma: no cover
-    if config.APP_NAME is not None:
-        default = config.APP_NAME
-    else:
-        default = None
+    default = config.APP_NAME if config.APP_NAME is not None else None
     config.APP_NAME = terminal.get_correct_answer(
         "Please enter app name", required=True, default=default
     )
@@ -76,10 +73,7 @@ def setup_client_config_path(config):  # pragma: no cover
 
 
 def setup_company(config):  # pragma: no cover
-    if config.COMPANY_NAME is not None:
-        default = config.COMPANY_NAME
-    else:
-        default = None
+    default = config.COMPANY_NAME if config.COMPANY_NAME is not None else None
     temp = terminal.get_correct_answer(
         "Please enter your name or company name", required=True, default=default
     )
